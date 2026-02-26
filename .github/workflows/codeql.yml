@@ -52,7 +52,8 @@ jobs:
           queries:
             - uses: security-and-quality
             - uses: github/codeql/javascript-queries#javascript/ql/src/codeql-suites/javascript-lgtm-full.qls
-              
+             - uses: github/codeql/javascript-queries@main
+               path: javascript/ql/src/codeql-suites/javascript-lgtm-full.qls
         build-mode: ${{ matrix.build-mode }}
 
     # Manual Maven build for WebGoat
