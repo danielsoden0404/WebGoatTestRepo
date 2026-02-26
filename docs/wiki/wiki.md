@@ -1,6 +1,7 @@
 # Complete Guide: Publishing Markdown Files to GitHub Wiki
 
 ![image of webgoattest](https://github.com/danielsoden0404/WebGoatTestRepo/blob/main/docs/images/webgoat.png)
+[readme file](../README.md)
 ## Table of Contents
 - [Understanding GitHub Wikis](#understanding)
 - [Prerequisites](#prerequisites)
