@@ -26,7 +26,7 @@ jobs:
           - language: java-kotlin
             build-mode: manual
           - language: javascript-typescript
-            build-mode: none
+            build-mode: automatic
 
     steps:
     - name: Checkout repository
@@ -51,9 +51,15 @@ jobs:
             - "**/*.test.js"
           queries:
             - uses: security-and-quality
+          packs:
+            javascript:
+              - scope/js-pack1
+              - scope/js-pack2
+            java:
+              - scope/java-pack1
+              - scope/java-pack2@v1.0.0
         build-mode: ${{ matrix.build-mode }}
 
-    # Manual Maven build for WebGoat
     - name: Build with Maven
       if: matrix.build-mode == 'manual'
       shell: bash
