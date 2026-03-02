@@ -51,13 +51,6 @@ jobs:
             - "**/*.test.js"
           queries:
             - uses: security-and-quality
-          packs:
-            javascript:
-              - scope/js-pack1
-              - scope/js-pack2
-            java:
-              - scope/java-pack1
-              - scope/java-pack2@v1.0.0
         build-mode: ${{ matrix.build-mode }}
 
     - name: Build with Maven
