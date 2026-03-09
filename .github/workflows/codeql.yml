@@ -50,7 +50,7 @@ jobs:
           paths-ignore:
             - "**/*.test.js"
           queries:
-            - uses: security-and-quality
+            - uses: security-extended
         build-mode: ${{ matrix.build-mode }}
 
     - name: Build with Maven
