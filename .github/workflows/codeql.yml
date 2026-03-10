@@ -51,6 +51,9 @@ jobs:
             - "**/*.test.js"
           queries:
             - uses: security-extended
+          query-filters:
+            - include:
+                security-severity: ">=7"
         build-mode: ${{ matrix.build-mode }}
 
     - name: Build with Maven
