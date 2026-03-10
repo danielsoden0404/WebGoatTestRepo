@@ -54,7 +54,9 @@ jobs:
           query-filters:
             - include:
                 security-severity: ">=7"
-        build-mode: ${{ matrix.build-mode }}
+            - include:
+                problem.severity: error
+          build-mode: ${{ matrix.build-mode }}
 
     - name: Build with Maven
       if: matrix.build-mode == 'manual'
