@@ -52,10 +52,10 @@ jobs:
           queries:
             - uses: security-extended
           query-filters:
-            - include:
-                security-severity: ">=7"
-            - include:
-                problem.severity: error
+            - exclude:
+                problem.severity:
+                  - warning
+                  - recommendation
           build-mode: ${{ matrix.build-mode }}
 
     - name: Build with Maven
