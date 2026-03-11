@@ -58,7 +58,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          build-mode: ${{ matrix['build-mode'] }}   
+          build-mode: ${{ matrix.build-mode }}   
           config: |
             paths-ignore:
               - "**/*.test.js"
@@ -73,9 +73,15 @@ jobs:
                     - recommendation
 
       - name: Autobuild
-        if: matrix['build-mode'] == 'autobuild'
+        if: matrix.build-mode == 'autobuild'
         uses: github/codeql-action/autobuild@v3
-
+        
+      - name: Manual build sample
+        if: matrix.build-mode == 'manual'
+        shell: bash
+        run: |
+          mvn -B -q package -DskipTests
+          
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
