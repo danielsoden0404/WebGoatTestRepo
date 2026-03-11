@@ -1,4 +1,4 @@
-name: "CodeQL Advanced (Generic)"
+name: "CodeQL Advanced"
 
 on:
   push:
@@ -9,28 +9,8 @@ on:
     - cron: '43 15 * * 6'
 
 jobs:
-  create-matrix:
-    name: Detect Languages
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      packages: read
-      actions: read
-      contents: read
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Get languages from repo
-        id: set-matrix
-        uses: advanced-security/set-codeql-language-matrix@v1
-        with:
-          access-token: ${{ secrets.GITHUB_TOKEN }}
-          endpoint: ${{ github.event.repository.languages_url }}
-
   analyze:
     name: Analyze (${{ matrix.language }})
-    needs: create-matrix
-    if: ${{ needs.create-matrix.outputs.matrix != '[]' }}
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
 
     permissions:
@@ -41,48 +21,51 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.create-matrix.outputs.matrix) }}
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set up Java
-        if: matrix.language == 'java-kotlin'
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
+    # Java setup for WebGoat
+    - name: Set up Java 25
+      if: matrix.language == 'java-kotlin'
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: 25
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}   
-          config: |
-            paths-ignore:
-              - "**/*.test.js"
-              - "**/node_modules/**"
-              - "**/vendor/**"
-            queries:
-              - uses: security-and-quality
-            query-filters:
-              - exclude:
-                  problem.severity:
-                    - warning
-                    - recommendation
+    # Initialize CodeQL
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: ${{ matrix.language }}
+        # Ignore any test.js files
+        config: |
+          paths-ignore:
+            - "**/*.test.js"
+          queries:
+            - uses: security-and-quality
+          query-filters:
+            - exclude:
+                problem.severity:
+                  - warning
+                  - recommendation
+          build-mode: ${{ matrix.build-mode }}
 
-      - name: Autobuild
-        if: matrix.build-mode == 'autobuild'
-        uses: github/codeql-action/autobuild@v3
-        
-      - name: Manual build sample
-        if: matrix.build-mode == 'manual'
-        shell: bash
-        run: |
-          mvn -B -q package -DskipTests
-          
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{ matrix.language }}"
+    - name: Build with Maven
+      if: matrix.build-mode == 'manual'
+      shell: bash
+      run: |
+        mvn -B -q package -DskipTests
+
+    # Run CodeQL analysis
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:${{ matrix.language }}"
