@@ -1,4 +1,4 @@
-name: "CodeQL Advanced (Auto Language)"
+name: "CodeQL Advanced (Generic)"
 
 on:
   push:
@@ -47,21 +47,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java 25
-        if: ${{ matrix.language == 'java-kotlin' && matrix['build-mode'] == 'manual' }}
+      - name: Set up Java
+        if: matrix.language == 'java-kotlin'
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '25'
+          java-version: '21'
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          build-mode: ${{ matrix['build-mode'] }}
+          build-mode: ${{ matrix['build-mode'] }}   
           config: |
             paths-ignore:
               - "**/*.test.js"
+              - "**/node_modules/**"
+              - "**/vendor/**"
             queries:
               - uses: security-and-quality
             query-filters:
@@ -70,13 +72,11 @@ jobs:
                     - warning
                     - recommendation
 
-      - name: Build with Maven
-        if: ${{ matrix['build-mode'] == 'manual' }}
-        shell: bash
-        run: |
-          mvn -B -q package -DskipTests
+      - name: Autobuild
+        if: matrix['build-mode'] == 'autobuild'
+        uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"
