@@ -9,7 +9,27 @@ on:
     - cron: '43 15 * * 6'
 
 jobs:
+  create-matrix:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Get languages from repo
+        id: set-matrix
+        uses: advanced-security/set-codeql-language-matrix@v1
+        with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          endpoint: ${{ github.event.repository.languages_url }}
+          build-mode-manual-override: 'java, swift'
+
   analyze:
+    needs: create-matrix
+    if: ${{ needs.create-matrix.outputs.matrix != '[]' }}
     name: Analyze (${{ matrix.language }})
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
 
@@ -21,18 +41,12 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - language: java-kotlin
-            build-mode: manual
-          - language: javascript-typescript
-            build-mode: none
+      matrix: ${{ fromJSON(needs.create-matrix.outputs.matrix) }}
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Java setup for WebGoat
     - name: Set up Java 25
       if: matrix.language == 'java-kotlin'
       uses: actions/setup-java@v3
@@ -40,12 +54,11 @@ jobs:
         distribution: 'temurin'
         java-version: 25
 
-    # Initialize CodeQL
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
-        # Ignore any test.js files
+        build-mode: ${{ matrix.build-mode }}
         config: |
           paths-ignore:
             - "**/*.test.js"
@@ -56,15 +69,20 @@ jobs:
                 problem.severity:
                   - warning
                   - recommendation
-          build-mode: ${{ matrix.build-mode }}
 
     - name: Build with Maven
-      if: matrix.build-mode == 'manual'
+      if: matrix.build-mode == 'manual' && matrix.language == 'java-kotlin'
       shell: bash
       run: |
         mvn -B -q package -DskipTests
 
-    # Run CodeQL analysis
+    - name: Manual build (non-Java)
+      if: matrix.build-mode == 'manual' && matrix.language != 'java-kotlin'
+      shell: bash
+      run: |
+        echo "Manual build required for ${{ matrix.language }} — add build commands here"
+        exit 1
+
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
       with:
