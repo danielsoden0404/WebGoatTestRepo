@@ -54,7 +54,6 @@ jobs:
           query-filters:
             - exclude:
                 problem.severity:
-                  - warning
                   - recommendation
           build-mode: ${{ matrix.build-mode }}
 
